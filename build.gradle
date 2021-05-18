@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'maven-publish'
 }
 
 group 'org.example'
@@ -12,7 +13,7 @@ repositories {
     }
 }
 dependencies {
-    compile 'com.github.KaptainWutax:FeatureUtils:75e3855d3a3b9adb59398e70ea5430279b662216'
+    implementation 'com.github.KaptainWutax:FeatureUtils:75e3855d3a3b9adb59398e70ea5430279b662216'
 
     implementation('com.github.KaptainWutax:MathUtils:5531c4a87b0f1bb85d1dab2bdd18ce375400626a') { transitive = false }
     implementation('com.github.KaptainWutax:SeedUtils:b6a383113ce5d8d09a59e91b28ff064fb97c0709') { transitive = false }
@@ -27,8 +28,4 @@ dependencies {
     implementation group: 'org.javatuples', name: 'javatuples', version: '1.2'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-}
-
-test {
-    useJUnitPlatform()
 }
