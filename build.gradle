@@ -1,0 +1,34 @@
+plugins {
+    id 'java'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://jitpack.io"
+    }
+}
+dependencies {
+    compile 'com.github.KaptainWutax:FeatureUtils:75e3855d3a3b9adb59398e70ea5430279b662216'
+
+    implementation('com.github.KaptainWutax:MathUtils:5531c4a87b0f1bb85d1dab2bdd18ce375400626a') { transitive = false }
+    implementation('com.github.KaptainWutax:SeedUtils:b6a383113ce5d8d09a59e91b28ff064fb97c0709') { transitive = false }
+    implementation('com.github.KaptainWutax:MCUtils:c0acdac614f0b6bf3b279f83910bd345d08a6ccb') { transitive = false }
+    implementation('com.github.KaptainWutax:NoiseUtils:a3954932b15a889aa51c82176942d62f291c3b12') { transitive = false }
+
+    implementation('com.github.KaptainWutax:BiomeUtils:43cbdbe4319790ecdfde89cc24077e8b3faf215c') {transitive = false}
+    implementation('com.github.KaptainWutax:TerrainUtils:21b6d72b7798403abf620f736d0f1972daf822ed') {transitive = false}
+    testImplementation('com.github.KaptainWutax:ChunkRandomReversal:6b76fb5cf2cd438de56e6a46cea2a83985831834') {transitive = false}
+    implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
+    implementation group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
+    implementation group: 'org.javatuples', name: 'javatuples', version: '1.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+}
+
+test {
+    useJUnitPlatform()
+}
