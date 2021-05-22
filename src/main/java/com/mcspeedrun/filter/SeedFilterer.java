@@ -10,23 +10,15 @@ import org.javatuples.Pair;
 
 public class SeedFilterer {
 
-    // state 0 is finding structure seed
-    // state 1 if finding biomes
-    // state 2 is done
-    static int state = 0;
+    private static final Object seedFindLock = new Object();
 
-    public static final int blockHeight = 100000;
+    public static final int DEFAULT_BLOCK_HEIGHT = 100000;
+    // TODO: dynamic tolerance based on settings
     static final int biomeTolerance = 300;
-    static Random seedGen;
 
-    static long seed;
-    static long structureSeedID = -1;
-    static long biomeSeedID = -1;
+    static PipelineBuilder settings;
 
-    static SeedInfo seedInfo;
-
-    static PipelineBuilder pipelineBuilder;
-
+    // TODO: move this over to a test module
     public static void main(String[] args) {
         init();
 
@@ -82,79 +74,121 @@ public class SeedFilterer {
     }
 
     public static void init(){
-        new OverworldBiomeBuilder();
-        new NetherBiomeBuilder();
-        new PortalLocationFilter();
-        new PortalLootBuilder();
-        new PortalIronFilter();
-        new PortalLootingFilter();
-        new PortalCryingFilter();
-        new VillageLocationFilter();
-        new BastionLocationFilter();
-        new FortressLocationFilter();
-        new SpawnLocationFilter();
-        new StrongholdLocationFilter();
+        synchronized(seedFindLock) {
+            new OverworldBiomeBuilder();
+            new NetherBiomeBuilder();
+            new PortalLocationFilter();
+            new PortalLootBuilder();
+            new PortalIronFilter();
+            new PortalLootingFilter();
+            new PortalCryingFilter();
+            new VillageLocationFilter();
+            new BastionLocationFilter();
+            new FortressLocationFilter();
+            new SpawnLocationFilter();
+            new StrongholdLocationFilter();
+        }
     }
 
     public static void setFilters(JsonArray filters){
-        pipelineBuilder = new PipelineBuilder(filters);
+        synchronized(seedFindLock){
+            settings = new PipelineBuilder(filters);
+        }
     }
 
     public static boolean checkSeed(long seed){
-        // check the structure seed
-        SeedInfo info = new StructureWorker(pipelineBuilder.buildStructurePipe()).checkSeed(seed);
-        if(info == null){
-            return false;
+        synchronized(seedFindLock){
+            // check the structure seed
+            SeedInfo info = new StructureWorker(settings.buildStructurePipe()).checkSeed(seed);
+            if (info == null) {
+                return false;
+            }
+            // check the rest of the seed
+            info = new BiomesWorker(settings.buildBiomePipe()).checkSeed(seed, info);
+            return info != null;
         }
-        // check the rest of the seed
-        info = new BiomesWorker(pipelineBuilder.buildBiomePipe()).checkSeed(seed, info);
-        return info != null;
     }
 
-    // TODO: block height as parameter and not as final
     public static long findSeed(long initial){
-        return findSeed(initial, Runtime.getRuntime().availableProcessors()*2);
+        return findSeed(initial, DEFAULT_BLOCK_HEIGHT);
     }
 
-    public static long findSeed(long initial, int threadCount){
+    public static long findSeed(long initial, int blockHeight){
+        return findSeed(initial, blockHeight, Runtime.getRuntime().availableProcessors()*2);
+    }
+
+    public static long findSeed(long initial, int blockHeight, int threadCount){
+        SeedFilterer filterer;
+
+        synchronized(seedFindLock) {
+            filterer = new SeedFilterer(settings, initial, blockHeight, threadCount);
+        }
+
+        return filterer.findSeed();
+    }
+
+    PipelineBuilder pipelineBuilder;
+
+    int threadCount;
+    int blockHeight;
+    long initialSeed;
+
+    // state 0 is finding structure seed
+    // state 1 if finding biomes
+    // state 2 is done
+    int state;
+
+    long structureSeedID;
+    long biomeSeedID;
+
+    long seed;
+
+    Random seedGen;
+    SeedInfo seedInfo;
+
+    private SeedFilterer(PipelineBuilder pipelineBuilder, long initialSeed, int blockHeight, int threadCount){
+        this.pipelineBuilder = pipelineBuilder;
+        this.initialSeed = initialSeed;
+        this.blockHeight = blockHeight;
+        this.threadCount = threadCount;
 
         // reset all of the state vars
-        state = 0;
-        structureSeedID = -1;
-        biomeSeedID = -1;
-        seedInfo = null;
+        this.state = 0;
+        this.structureSeedID = -1;
+        this.biomeSeedID = -1;
+        this.seedInfo = null;
+    }
 
-        seedGen = new Random(initial);
+    private long findSeed(){
+        this.seedGen = new Random(this.initialSeed);
 
-        Thread[] workers = new Thread[threadCount];
+        Thread[] workers = new Thread[this.threadCount];
 
         // state machine for walking though the structure and biome seeds
-        while(state != 2) {
-            switch(state){
+        while(this.state != 2){
+            switch(this.state){
                 case 0:
-                    for(int i = 0; i < threadCount; i++){
-                        workers[i] = new StructureWorker(blockHeight, pipelineBuilder.buildStructurePipe());
+                    for(int i = 0; i < this.threadCount; i++) {
+                        workers[i] = new StructureWorker(this, this.blockHeight, this.pipelineBuilder.buildStructurePipe());
                         workers[i].start();
                     }
-                    for(Thread worker:workers){
+                    for (Thread worker : workers) {
                         try {
                             worker.join();
-                        }
-                        catch (InterruptedException e) {
+                        } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                     }
                     break;
                 case 1:
-                    for(int i = 0; i < threadCount; i++){
-                        workers[i] = new BiomesWorker(seedInfo, pipelineBuilder.buildBiomePipe());
+                    for(int i = 0; i < this.threadCount; i++) {
+                        workers[i] = new BiomesWorker(this, this.seedInfo, this.pipelineBuilder.buildBiomePipe());
                         workers[i].start();
                     }
-                    for(Thread worker:workers){
+                    for(Thread worker : workers) {
                         try {
                             worker.join();
-                        }
-                        catch (InterruptedException e) {
+                        } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                     }
@@ -162,19 +196,18 @@ public class SeedFilterer {
             }
         }
 
-        return seed;
+        return this.seed;
     }
 
-    public static synchronized Pair<Long, Long> nextStructureSeed(){
+    public synchronized Pair<Long, Long> nextStructureSeed(){
         if(state != 0){
             return null;
         }
         structureSeedID++;
-        return new Pair<Long, Long>(structureSeedID, seedGen.nextLong());
+        return new Pair<>(structureSeedID, seedGen.nextLong());
     }
 
-
-    public static synchronized Long nextBiomeSeed(){
+    public synchronized Long nextBiomeSeed(){
         // if something made the state change then exit our search
         if(state != 1){
             return null;
@@ -185,15 +218,15 @@ public class SeedFilterer {
             cancelBiomeSeed();
             return null;
         }
-        return (long) biomeSeedID << 48 | seed;
+        return biomeSeedID << 48 | seed;
     }
 
-    public static synchronized void cancelBiomeSeed(){
+    public synchronized void cancelBiomeSeed(){
         state = 0;
         biomeSeedID = -1;
     }
 
-    public static synchronized void foundStructureSeed(long id, long structureSeed, SeedInfo info){
+    public synchronized void foundStructureSeed(long id, long structureSeed, SeedInfo info){
         // switch to biome search mode
         state = 1;
         if(structureSeedID == 0 || id < structureSeedID){
@@ -203,7 +236,7 @@ public class SeedFilterer {
         }
     }
 
-    public static synchronized void foundSeed(Long foundSeed){
+    public synchronized void foundSeed(Long foundSeed){
         state = 2;
         seed = foundSeed;
     }

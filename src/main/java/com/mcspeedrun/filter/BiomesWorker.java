@@ -13,13 +13,13 @@ public class BiomesWorker extends WorkerContext {
         this.baseInfo = null;
     }
 
-    BiomesWorker(SeedInfo baseInfo, Function<Triplet<WorkerContext, Long, SeedInfo>, Triplet<WorkerContext, Long, SeedInfo>> pipeline) {
-        super(pipeline);
+    BiomesWorker(SeedFilterer filterer, SeedInfo baseInfo, Function<Triplet<WorkerContext, Long, SeedInfo>, Triplet<WorkerContext, Long, SeedInfo>> pipeline) {
+        super(filterer, pipeline);
         this.baseInfo = baseInfo;
     }
 
     private Long nextSeed(){
-        return SeedFilterer.nextBiomeSeed();
+        return this.filterer.nextBiomeSeed();
     }
 
     @Override
@@ -28,7 +28,7 @@ public class BiomesWorker extends WorkerContext {
         while(seed != null){
             SeedInfo info = this.checkSeed(seed, this.baseInfo.clone());
             if(info != null){
-                SeedFilterer.foundSeed(seed);
+                this.filterer.foundSeed(seed);
             }
             seed = nextSeed();
         }

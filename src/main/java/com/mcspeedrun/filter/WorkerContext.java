@@ -18,9 +18,15 @@ public abstract class WorkerContext extends Thread {
     public final ChunkRand chunkRand = new ChunkRand();
 
     private final Function<Triplet<WorkerContext, Long, SeedInfo>, Triplet<WorkerContext, Long, SeedInfo>> pipeline;
+    protected final SeedFilterer filterer;
 
     WorkerContext(Function<Triplet<WorkerContext, Long, SeedInfo>, Triplet<WorkerContext, Long, SeedInfo>> pipeline){
+        this(null, pipeline);
+    }
+
+    WorkerContext(SeedFilterer filterer, Function<Triplet<WorkerContext, Long, SeedInfo>, Triplet<WorkerContext, Long, SeedInfo>> pipeline){
         this.pipeline = pipeline;
+        this.filterer = filterer;
     }
 
     public SeedInfo checkSeed(long seed, SeedInfo info) {

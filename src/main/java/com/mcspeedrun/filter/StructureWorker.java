@@ -15,13 +15,13 @@ class StructureWorker extends WorkerContext {
         this.blockHeight = 0;
     }
 
-    public StructureWorker(int blockHeight, Function<Triplet<WorkerContext, Long, SeedInfo>, Triplet<WorkerContext, Long, SeedInfo>> pipeline){
-        super(pipeline);
+    public StructureWorker(SeedFilterer filterer, int blockHeight, Function<Triplet<WorkerContext, Long, SeedInfo>, Triplet<WorkerContext, Long, SeedInfo>> pipeline){
+        super(filterer, pipeline);
         this.blockHeight = blockHeight;
     }
 
     private Pair<Long, Long> nextSeed(){
-        return SeedFilterer.nextStructureSeed();
+        return this.filterer.nextStructureSeed();
     }
 
     public void run(){
@@ -36,14 +36,14 @@ class StructureWorker extends WorkerContext {
                 long seed = random.nextLong();
                 SeedInfo info = this.checkSeed(seed);
                 if(info != null){
-                    SeedFilterer.foundStructureSeed(block.getValue0(), seed, info);
+                    this.filterer.foundStructureSeed(block.getValue0(), seed, info);
                     return;
                 }
             }
 
             // get the next block
             block = this.nextSeed();
-        };
+        }
     }
 
     public SeedInfo checkSeed(long seed){
