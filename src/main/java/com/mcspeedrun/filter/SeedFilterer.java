@@ -34,17 +34,17 @@ public class SeedFilterer {
 
         JsonObject setting = new JsonObject();
         setting.add("id", new JsonPrimitive(PortalLootingFilter.id));
-        setting.add("value", new JsonPrimitive(3));
+        setting.add("value", new JsonPrimitive(1));
         settings.add(setting);
 
         setting = new JsonObject();
         setting.add("id", new JsonPrimitive(PortalIronFilter.id));
-        setting.add("value", new JsonPrimitive(4));
+        setting.add("value", new JsonPrimitive(1));
         settings.add(setting);
 
         setting = new JsonObject();
         setting.add("id", new JsonPrimitive(PortalCryingFilter.id));
-        setting.add("value", new JsonPrimitive(true));
+        setting.add("value", new JsonPrimitive(false));
         settings.add(setting);
 
         setting = new JsonObject();
@@ -57,18 +57,43 @@ public class SeedFilterer {
         setting.add("value", new JsonPrimitive(96));
         settings.add(setting);
 
+        setting = new JsonObject();
+        setting.add("id", new JsonPrimitive(BastionLocationFilter.id));
+        setting.add("value", new JsonPrimitive(96));
+        settings.add(setting);
+
+        setting = new JsonObject();
+        setting.add("id", new JsonPrimitive(FortressLocationFilter.id));
+        setting.add("value", new JsonPrimitive(96));
+        settings.add(setting);
+
+        setting = new JsonObject();
+        setting.add("id", new JsonPrimitive(SpawnLocationFilter.id));
+        setting.add("value", new JsonPrimitive(96));
+        settings.add(setting);
+
+        setting = new JsonObject();
+        setting.add("id", new JsonPrimitive(StrongholdLocationFilter.id));
+        setting.add("value", new JsonPrimitive(300));
+        settings.add(setting);
+
         setFilters(settings);
-        System.out.println(findSeed(1L));
+        System.out.println(findSeed(1L<<31));
     }
 
     public static void init(){
         new OverworldBiomeBuilder();
+        new NetherBiomeBuilder();
         new PortalLocationFilter();
         new PortalLootBuilder();
         new PortalIronFilter();
         new PortalLootingFilter();
         new PortalCryingFilter();
         new VillageLocationFilter();
+        new BastionLocationFilter();
+        new FortressLocationFilter();
+        new SpawnLocationFilter();
+        new StrongholdLocationFilter();
     }
 
     public static void setFilters(JsonArray filters){
