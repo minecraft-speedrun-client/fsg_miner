@@ -1,29 +1,24 @@
 package com.mcspeedrun.filter.filters;
 
 import com.google.gson.JsonElement;
+import com.mcspeedrun.filter.FilterBuilder;
 import com.mcspeedrun.filter.FilterType;
 import com.mcspeedrun.filter.SeedInfo;
-import com.mcspeedrun.filter.FilterBuilder;
 import com.mcspeedrun.filter.WorkerContext;
-import kaptainwutax.biomeutils.source.NetherBiomeSource;
-import kaptainwutax.biomeutils.source.OverworldBiomeSource;
-import kaptainwutax.featureutils.structure.generator.structure.RuinedPortalGenerator;
-import kaptainwutax.mcutils.version.MCVersion;
-import kaptainwutax.terrainutils.ChunkGenerator;
-import kaptainwutax.terrainutils.terrain.NetherChunkGenerator;
-import kaptainwutax.terrainutils.terrain.OverworldChunkGenerator;
 import org.javatuples.Quartet;
 import org.javatuples.Triplet;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
-public class PortalLocationFilter extends FilterBuilder {
+public class FortressLocationFilter extends FilterBuilder {
 
     private static final int DEFAULT_DISTANCE = 96;
 
-    public static String id = "ruin-portal-location";
+    public static String id = "fortress-location";
 
-    public PortalLocationFilter(){
+    public FortressLocationFilter(){
         super(id);
     }
 
@@ -38,13 +33,17 @@ public class PortalLocationFilter extends FilterBuilder {
                     int distance = (int) a.getValue3();
 
                     // get the cords of the ruined portal
-                    info.portalLocation = context.portal.getInRegion(seed, 0, 0, context.chunkRand);
+                    info.fortressLocation = context.fortress.getInRegion(seed, 0, -1, context.chunkRand);
 
-                    // if one didnt spawn then return null
-                    if (info.portalLocation == null) return null;
+                    // if one didnt spawn:
+                    if (info.fortressLocation == null){
+                        info.fortressLocation = context.fortress.getInRegion(seed, -1, 0, context.chunkRand);
+                        // if the second one doesn't spawn either:
+                        if(info.fortressLocation == null) return null;
+                    }
 
-                    // if the ruined portal is outside of our box then return null
-                    if(info.portalLocation.toBlockPos().getX() >= distance || info.portalLocation.toBlockPos().getZ() >= distance){
+                    // if the fortress is outside of our box then return null
+                    if(Math.abs(info.fortressLocation.toBlockPos().getX()) >= distance || Math.abs(info.fortressLocation.toBlockPos().getX()) >= distance){
                         return null;
                     }
 
@@ -52,26 +51,13 @@ public class PortalLocationFilter extends FilterBuilder {
                     return a.removeFrom3();
                 };
             case BIOME:
-                return (a)-> {
-                    //Initialize the parameters
+                return (a)->{
                     WorkerContext context = a.getValue0();
                     SeedInfo info = a.getValue2();
 
-                    //Check if the ruined portal can spawn
-                    NetherBiomeSource nbs = info.netherBiomeSource;
-                    if(!context.portal.canSpawn(info.portalLocation,nbs)) return null;
-
-                    //Check if the ruined portal can generate
-                    ChunkGenerator cg = new NetherChunkGenerator(nbs);
-                    RuinedPortalGenerator ruinedPortalGenerator=new RuinedPortalGenerator(MCVersion.v1_16_1);
-                    if(!ruinedPortalGenerator.generate(cg,info.villageLocation)) return null;
-
-                    //Check if the ruined portal spawns above ground
-                    if(ruinedPortalGenerator.getLocation()!= RuinedPortalGenerator.Location.ON_LAND_SURFACE) return null;
-
-
-                    //Send back the import without the args
-                    return a.removeFrom3();
+                    //Check if the fortress can spawn
+                    if(!context.fortress.canSpawn(info.fortressLocation,info.netherBiomeSource)) return null;
+                    else return a.removeFrom3();
                 };
             default:
                 return super.getFilter(type);
@@ -118,6 +104,18 @@ public class PortalLocationFilter extends FilterBuilder {
                 return 3.0;
             default:
                 return super.getCost(type, parameters);
+        }
+    }
+
+    @Override
+    public List<String> getDependencies(FilterType type) {
+        switch(type) {
+            case BIOME:
+                List<String> list = new ArrayList<>();
+                list.add(NetherBiomeBuilder.id);
+                return list;
+            default:
+                return super.getDependencies(type);
         }
     }
 }
