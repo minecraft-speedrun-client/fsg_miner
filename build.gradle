@@ -2,9 +2,6 @@ plugins {
     id 'java'
 }
 
-group 'org.example'
-version '1.0-SNAPSHOT'
-
 repositories {
     mavenCentral()
     maven {
@@ -12,7 +9,7 @@ repositories {
     }
 }
 dependencies {
-    compile 'com.github.KaptainWutax:FeatureUtils:75e3855d3a3b9adb59398e70ea5430279b662216'
+    implementation 'com.github.KaptainWutax:FeatureUtils:75e3855d3a3b9adb59398e70ea5430279b662216'
 
     implementation('com.github.KaptainWutax:MathUtils:5531c4a87b0f1bb85d1dab2bdd18ce375400626a') { transitive = false }
     implementation('com.github.KaptainWutax:SeedUtils:b6a383113ce5d8d09a59e91b28ff064fb97c0709') { transitive = false }
