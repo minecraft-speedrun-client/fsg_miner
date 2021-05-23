@@ -67,7 +67,7 @@ public class PortalLocationFilter extends FilterBuilder {
                     if(!ruinedPortalGenerator.generate(cg,info.villageLocation)) return null;
 
                     //Check if the ruined portal spawns above ground
-                    if(ruinedPortalGenerator.getLocation()!= RuinedPortalGenerator.Location.ON_LAND_SURFACE) return null;
+                    if(ruinedPortalGenerator.isBuried()) return null;
 
 
                     //Send back the import without the args
