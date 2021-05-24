@@ -70,7 +70,9 @@ public class SeedFilterer {
         settings.add(setting);
 
         setFilters(settings);
-        System.out.println(findSeed(1L<<31));
+        long seed = findSeed(1L<<31);
+        System.out.println(seed);
+        System.out.println(checkSeed(seed));
     }
 
     public static void init(){
@@ -103,8 +105,9 @@ public class SeedFilterer {
             if (info == null) {
                 return false;
             }
+
             // check the rest of the seed
-            info = new BiomesWorker(settings.buildBiomePipe()).checkSeed(seed, info);
+            info = new BiomesWorker(seed & 0xffffffffffffL, settings.buildBiomePipe()).checkSeed(seed >> 48, info);
             return info != null;
         }
     }
@@ -182,7 +185,7 @@ public class SeedFilterer {
                     break;
                 case 1:
                     for(int i = 0; i < this.threadCount; i++) {
-                        workers[i] = new BiomesWorker(this, this.seedInfo, this.pipelineBuilder.buildBiomePipe());
+                        workers[i] = new BiomesWorker(this, seed, this.seedInfo, this.pipelineBuilder.buildBiomePipe());
                         workers[i].start();
                     }
                     for(Thread worker : workers) {
@@ -218,7 +221,7 @@ public class SeedFilterer {
             cancelBiomeSeed();
             return null;
         }
-        return biomeSeedID << 48 | seed;
+        return biomeSeedID;
     }
 
     public synchronized void cancelBiomeSeed(){
